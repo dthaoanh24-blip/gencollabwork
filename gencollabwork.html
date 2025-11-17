@@ -1,0 +1,77 @@
+<!doctype html>
+}
+document.getElementById('btn-reset-menu').onclick = ()=>{
+menuJsonTextarea.value = `{
+"categories": [
+{"name":"CÀ PHÊ","items":[{"id":"c1","name":"Cà phê muối","price":44000},{"id":"c2","name":"Double espresso","price":44000},{"id":"c3","name":"Latte","price":44000}]},
+{"name":"TRÀ","items":[{"id":"t1","name":"Trà đào cam sả","price":44000},{"id":"t2","name":"Trà dâu phúc bồn tử","price":44000}]},
+{"name":"SỮA","items":[{"id":"m1","name":"Trà sữa oolong","price":44000},{"id":"m2","name":"Matcha latte","price":44000}]},
+{"name":"KHÁC","items":[{"id":"o1","name":"Kombucha","price":44000},{"id":"o2","name":"Pocari sweat","price":44000}]}
+]
+}`
+document.getElementById('btn-load').click()
+}
+
+
+// Export
+document.getElementById('btn-export').onclick = ()=>{
+const order = buildOrder(true)
+const blob = new Blob([JSON.stringify(order, null, 2)], {type:'application/json'})
+const url = URL.createObjectURL(blob)
+const a = document.createElement('a'); a.href=url; a.download='order.json'; a.click(); URL.revokeObjectURL(url)
+}
+
+
+document.getElementById('btn-copy').onclick = ()=>{
+const order = buildOrder(true)
+navigator.clipboard.writeText(JSON.stringify(order)).then(()=>alert('Đã sao chép JSON đơn'))
+}
+
+
+function buildOrder(includeEmpty=false){
+const rows=[]; let total=0
+for(const id in cart){ const q=cart[id]; if(q<=0) continue; const it=findItemById(id); rows.push({id:it.id,name:it.name,price:it.price,qty:q,amount:it.price*q}); total+=it.price*q }
+return {store:'GENO-Order (giả lập)',time:new Date().toISOString(),items:rows,total:total}
+}
+
+
+document.getElementById('btn-submit').onclick = ()=>{
+const order = buildOrder(true)
+if(order.items.length===0){alert('Giỏ rỗng! Chọn vài món đã nhé :)');return}
+showModal(order)
+}
+
+
+function showModal(order){
+document.getElementById('modal-title').innerText = 'Tóm tắt đơn hàng'
+const b = document.getElementById('modal-body')
+b.innerHTML = `<div class=small><strong>Thời gian:</strong> ${new Date(order.time).toLocaleString()}</div>`
+order.items.forEach(it=>{ b.innerHTML += `<div style="display:flex;justify-content:space-between;margin-top:8px"><div>${it.name} x ${it.qty}</div><div>${money(it.amount)}</div></div>` })
+b.innerHTML += `<hr><div style="display:flex;justify-content:space-between"><strong>Tổng</strong><strong>${money(order.total)}</strong></div>`
+b.innerHTML += `<div class="small" style="margin-top:8px">(Đây là bản giả lập. Nếu muốn gửi tự động vào Gmail hoặc Zalo, tôi có thể giúp cấu hình tiếp.)</div>`
+modal.style.display='flex'
+}
+document.getElementById('modal-close').onclick = ()=>modal.style.display='none'
+
+
+// QR generation (uses Google Chart API image)
+document.getElementById('btn-gen-qr').onclick = ()=>{
+const u = encodeURIComponent(document.getElementById('input-url').value)
+const qrUrl = `https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=${u}`
+document.getElementById('qr-img').innerHTML = `<img src="${qrUrl}" alt="QR" style="width:120px">`
+}
+
+
+// Reset cart
+document.getElementById('btn-reset').onclick = ()=>{ if(confirm('Xóa toàn bộ giỏ?')){ cart={}; document.querySelectorAll('[id^="count-"]').forEach(el=>el.innerText=0); renderCart()} }
+
+
+// initial load
+document.getElementById('btn-reset-menu').click()
+
+
+// expose removeItem for inline onclick
+window.removeItem = removeItem
+</script>
+</body>
+</html>
